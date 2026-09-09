@@ -11,4 +11,7 @@ import java.util.List;
 public interface AntecedenteRepository extends JpaRepository<Antecedente, Long> {
     List<Antecedente> findByPacienteId(Long pacienteId);
     List<Antecedente> findByPacienteIdAndCategoria(Long pacienteId, CategoriaAntecedente categoria);
+    // Compatibilidad Req.5 feature: tipo como String (feature usa TipoAntecedente enum -> se convierte a String)
+    List<Antecedente> findByPacienteIdAndTipo(Long pacienteId, String tipo);
+    List<Antecedente> findByTipo(String tipo);
 }

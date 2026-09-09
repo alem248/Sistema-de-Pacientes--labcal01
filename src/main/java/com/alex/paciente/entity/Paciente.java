@@ -1,6 +1,7 @@
 package com.alex.paciente.entity;
 
 import com.alex.paciente.entity.enums.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -10,7 +11,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "paciente", uniqueConstraints = {
@@ -135,6 +138,24 @@ public class Paciente {
     @Builder.Default
     private List<Antecedente> antecedentes = new ArrayList<>();
 
+    // Vinculación Req.5/6 feature: Historia clínica y alergias (compatibilidad con rama feature/req-05-06)
+    @JsonIgnore
+    @OneToOne(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private HistoriaClinica historiaClinica;
+
+    @JsonIgnore
+    @Builder.Default
+    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<PacienteAlergia> pacienteAlergias = new HashSet<>();
+
+    @JsonIgnore
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "paciente_alergia",
+            joinColumns = @JoinColumn(name = "paciente_id", insertable = false, updatable = false),
+            inverseJoinColumns = @JoinColumn(name = "alergia_id", insertable = false, updatable = false))
+    private Set<Alergia> alergias = new HashSet<>();
+
     @PrePersist
     protected void onCreate() {
         this.fechaRegistro = LocalDateTime.now();
@@ -161,6 +182,16 @@ public class Paciente {
         return String.format("%s %s %s", nombres, apellidoPaterno, apellidoMaterno).trim();
     }
 
+    // Aliases para compatibilidad con feature Req.5/6 (codigo/dni/email/activo)
+    @Transient
+    public String getCodigo() { return codigoPaciente; }
+    @Transient
+    public String getDni() { return numeroDocumento; }
+    @Transient
+    public String getEmail() { return correo; }
+    @Transient
+    public Boolean getActivo() { return estadoRegistro == EstadoRegistro.ACTIVO; }
+
     // Helpers para relaciones
     public void addContacto(ContactoEmergencia contacto) {
         contactos.add(contacto);
@@ -180,5 +211,10 @@ public class Paciente {
     public void addAntecedente(Antecedente antecedente) {
         antecedentes.add(antecedente);
         antecedente.setPaciente(this);
+    }
+
+    public void addPacienteAlergia(PacienteAlergia pa) {
+        pacienteAlergias.add(pa);
+        pa.setPaciente(this);
     }
 }
