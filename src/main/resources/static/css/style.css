@@ -1,0 +1,5 @@
+/* RF-PAC-01 - Estilos formulario pacientes */
+body { background-color: #f8f9fa; }
+.card-header { background-color: #0d6efd; color: white; }
+.required::after { content: " *"; color: red; }
+.edad-calculada { font-weight: bold; color: #0d6efd; }
