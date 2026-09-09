@@ -31,9 +31,13 @@ public class AntecedenteServiceImpl implements AntecedenteService {
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró paciente con id " + pacienteId));
         Antecedente a = Antecedente.builder()
-                .tipo(dto.tipo())
-                .categoria(dto.categoria())
+                // Modelo companero (MVC Thymeleaf)
+                .categoria(mapToCategoriaCompanero(dto.tipo()))
+                .tipo(dto.categoria().name())
                 .descripcion(dto.descripcion().trim())
+                // Req.05 modelo tipado REST
+                .tipoAntecedente(dto.tipo())
+                .categoriaDetalle(dto.categoria())
                 .fechaDiagnostico(dto.fechaDiagnostico())
                 .activo(true)
                 .paciente(paciente)
@@ -52,14 +56,14 @@ public class AntecedenteServiceImpl implements AntecedenteService {
     @Transactional(readOnly = true)
     public List<AntecedenteResponseDTO> listarPorPacienteYTipo(Long pacienteId, TipoAntecedente tipo) {
         verificarPaciente(pacienteId);
-        return antecedenteRepository.findByPacienteIdAndTipo(pacienteId, tipo).stream().map(this::toDTO).toList();
+        return antecedenteRepository.findByPacienteIdAndTipoAntecedente(pacienteId, tipo).stream().map(this::toDTO).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AntecedenteResponseDTO> listarPorPacienteYCategoria(Long pacienteId, CategoriaAntecedente categoria) {
         verificarPaciente(pacienteId);
-        return antecedenteRepository.findByPacienteIdAndCategoria(pacienteId, categoria).stream().map(this::toDTO).toList();
+        return antecedenteRepository.findByPacienteIdAndCategoriaDetalle(pacienteId, categoria).stream().map(this::toDTO).toList();
     }
 
     @Override
@@ -71,8 +75,10 @@ public class AntecedenteServiceImpl implements AntecedenteService {
     @Override
     public AntecedenteResponseDTO actualizar(Long id, AntecedenteRequestDTO dto) {
         Antecedente a = getEntity(id);
-        a.setTipo(dto.tipo());
-        a.setCategoria(dto.categoria());
+        a.setCategoria(mapToCategoriaCompanero(dto.tipo()));
+        a.setTipo(dto.categoria().name());
+        a.setTipoAntecedente(dto.tipo());
+        a.setCategoriaDetalle(dto.categoria());
         a.setDescripcion(dto.descripcion().trim());
         a.setFechaDiagnostico(dto.fechaDiagnostico());
         return toDTO(antecedenteRepository.save(a));
@@ -96,9 +102,37 @@ public class AntecedenteServiceImpl implements AntecedenteService {
     private AntecedenteResponseDTO toDTO(Antecedente a) {
         Paciente p = a.getPaciente();
         String nombre = p.getNombres() + " " + p.getApellidoPaterno();
+        // Registros creados por MVC solo tienen categoria/tipo String; mapear a enums REST con fallback.
+        TipoAntecedente tipo = a.getTipoAntecedente() != null
+                ? a.getTipoAntecedente()
+                : mapToTipoRest(a.getCategoria());
+        CategoriaAntecedente categoria = a.getCategoriaDetalle() != null
+                ? a.getCategoriaDetalle()
+                : mapToCategoriaRest(a.getTipo());
         return new AntecedenteResponseDTO(
-                a.getId(), a.getTipo(), a.getCategoria(), a.getDescripcion(),
+                a.getId(), tipo, categoria, a.getDescripcion(),
                 a.getFechaDiagnostico(), a.getFechaRegistro(), a.getActivo(),
                 p.getId(), nombre);
+    }
+
+    private com.alex.paciente.entity.enums.CategoriaAntecedente mapToCategoriaCompanero(TipoAntecedente tipo) {
+        if (tipo == null) return com.alex.paciente.entity.enums.CategoriaAntecedente.PERSONAL;
+        return tipo == TipoAntecedente.FAMILIAR
+                ? com.alex.paciente.entity.enums.CategoriaAntecedente.FAMILIAR
+                : com.alex.paciente.entity.enums.CategoriaAntecedente.PERSONAL;
+    }
+
+    private TipoAntecedente mapToTipoRest(com.alex.paciente.entity.enums.CategoriaAntecedente categoria) {
+        if (categoria == com.alex.paciente.entity.enums.CategoriaAntecedente.FAMILIAR) return TipoAntecedente.FAMILIAR;
+        return TipoAntecedente.PERSONAL;
+    }
+
+    private CategoriaAntecedente mapToCategoriaRest(String tipoStr) {
+        if (tipoStr == null) return CategoriaAntecedente.OTRO;
+        try {
+            return CategoriaAntecedente.valueOf(tipoStr.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return CategoriaAntecedente.OTRO;
+        }
     }
 }
