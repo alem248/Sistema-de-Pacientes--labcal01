@@ -65,7 +65,7 @@
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-filter"></i> Avanzada</button>
                 </div>
-                <div class="col-12 text-end" th:if="${q != null or busquedaAvanzada}">
+                <div class="col-12 text-end" th:if="${q != null or (busquedaAvanzada != null and busquedaAvanzada)}">
                     <a href="/pacientes" class="btn btn-sm btn-secondary"><i class="bi bi-x-circle"></i> Limpiar</a>
                 </div>
             </form>
