@@ -91,6 +91,7 @@ public class Paciente {
     private String tipoSangre; // A+, A-, B+, B-, AB+, AB-, O+, O-
 
     @NotBlank(message = "El estado es obligatorio")
+    @Builder.Default
     @Column(nullable = false, length = 20)
     private String estado = "Activo"; // Activo, Inactivo, Fallecido
 
