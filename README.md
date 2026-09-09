@@ -21,6 +21,7 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 - `RF-PAC-03: Código único autogenerado` -> formato `PAC-000001` incremental (`PacienteService.generarCodigoPaciente():43`)
 - Búsqueda por DNI/documento, verificación previa `existsByNumeroDocumento`, evita duplicados (`PacienteServiceImpl.registrarPaciente():54`)
 - Consulta rápida por código y detalle
+- Colaborador: validación documento `pacienteRepository.existsByNumeroDocumento` en `PacienteController` + `DocumentoDuplicadoException`
 
 ### Contacto de Emergencia
 - Uno o varios por paciente: nombre completo, parentesco, teléfono, dirección, correo, contacto principal (único principal por paciente)
@@ -64,9 +65,10 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 
 ### 2. SQLyog / phpMyAdmin
 1. Conectar SQLyog: Host `localhost`, User `root`, Password ``, Port `3306`
-2. Ejecutar `src/main/resources/db/schema.sql`:
+2. Ejecutar `src/main/resources/db/schema.sql` (BD `db_pacientes`) o `sql/pacientes.sql` (colaborador usa `sistema_pacientes`):
    ```sql
    CREATE DATABASE db_pacientes CHARACTER SET utf8mb4;
+   -- o CREATE DATABASE sistema_pacientes
    ```
    El script crea las 4 tablas: `paciente`, `contacto_emergencia`, `seguro_paciente`, `antecedente` con índices y FKs.
 
@@ -88,7 +90,7 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 ## 📁 Estructura
 
 ```
-src/main/java/com/alex/paciente
+src/main/java/com/alex/paciente (paquete principal - lowercase)
   ├── entity/
   │   ├── Paciente.java:18            # RF-PAC-03/04, edad calculada, fotoUrl
   │   ├── ContactoEmergencia.java:10
@@ -106,13 +108,18 @@ src/main/java/com/alex/paciente
   │   └── HomeController.java
   └── config/WebConfig.java           # /uploads/** handler
 
+# Paquete colaborador (compatibilidad):
+src/main/java/com/alex/Paciente (uppercase - se migrará a lowercase en próximo refactor)
+  └── exception/DocumentoDuplicadoException.java
+
 src/main/resources/
   ├── application.properties
-  ├── db/schema.sql                   # Script SQLyog
-  └── templates/paciente/
-      ├── lista.html                  # Búsqueda + tabla
-      ├── formulario.html             # Registro/edición RF-PAC-03/04
-      └── detalle.html                # Foto + contactos + seguros + antecedentes
+  ├── db/schema.sql                   # Script SQLyog principal (db_pacientes)
+  ├── sql/pacientes.sql               # Script colaborador (sistema_pacientes)
+  └── templates/paciente/ y pacientes/
+      ├── lista.html
+      ├── formulario.html
+      └── detalle.html
 ```
 
 ---
@@ -124,6 +131,7 @@ Este proyecto está vinculado al repo:
 ```bash
 git remote add origin https://github.com/alem248/Sistema-de-Pacientes--labcal01.git
 git branch -M main
+git pull --allow-unrelated-histories  # para integrar trabajo colaborativo
 git push -u origin main
 ```
 
@@ -137,6 +145,7 @@ Cada feature se commiteó de forma descriptiva:
 - `feat: búsqueda por DNI/código/nombres/apellidos/teléfono/HC y listado`
 - `feat: edición paciente y gestión estados Activo/Inactivo/Fallecido`
 - `feat: controladores MVC Thymeleaf + upload foto + verificación AJAX`
+- `merge: integrar trabajo colaborativo remoto (labcal01) con implementacion local`
 
 Para trabajo conjunto: cada integrante hace `git pull`, crea rama feature, commitea y `git push`.
 
