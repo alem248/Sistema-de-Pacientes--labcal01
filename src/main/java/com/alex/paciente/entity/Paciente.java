@@ -1,5 +1,6 @@
 package com.alex.paciente.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -80,26 +81,29 @@ public class Paciente {
     }
 
     // @OneToOne con HistoriaClinica
+    @JsonIgnore
     @OneToOne(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private HistoriaClinica historiaClinica;
 
     // @OneToMany con Antecedente
+    @JsonIgnore
     @Builder.Default
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Antecedente> antecedentes = new HashSet<>();
 
     // @OneToMany con detalle de alergias (N-M con atributos: reacción, severidad)
+    @JsonIgnore
     @Builder.Default
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<PacienteAlergia> pacienteAlergias = new HashSet<>();
 
     // @ManyToMany con Alergia (vista solo lectura del mismo join table).
     // La escritura se hace vía PacienteAlergia para guardar reacción/severidad.
+    @JsonIgnore
     @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "paciente_alergia",
             joinColumns = @JoinColumn(name = "paciente_id", insertable = false, updatable = false),
-            inverseJoinColumns = @JoinColumn(name = "alergia_id", insertable = false, updatable = false),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"paciente_id", "alergia_id"}))
+            inverseJoinColumns = @JoinColumn(name = "alergia_id", insertable = false, updatable = false))
     private Set<Alergia> alergias = new HashSet<>();
 }

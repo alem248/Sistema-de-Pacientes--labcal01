@@ -1,6 +1,7 @@
 package com.alex.paciente.service;
 
 import com.alex.paciente.dto.HistoriaClinicaDTO;
+import com.alex.paciente.dto.HistoriaClinicaResponseDTO;
 import com.alex.paciente.entity.HistoriaClinica;
 import com.alex.paciente.entity.Paciente;
 import com.alex.paciente.exception.DuplicateResourceException;
@@ -19,7 +20,7 @@ public class HistoriaClinicaService {
     private final HistoriaClinicaRepository historiaRepository;
     private final PacienteRepository pacienteRepository;
 
-    public HistoriaClinica crear(Long pacienteId, HistoriaClinicaDTO dto) {
+    public HistoriaClinicaResponseDTO crear(Long pacienteId, HistoriaClinicaDTO dto) {
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró paciente con id " + pacienteId));
         if (historiaRepository.findByPacienteId(pacienteId).isPresent())
@@ -32,23 +33,31 @@ public class HistoriaClinicaService {
                 .observaciones(dto.observaciones())
                 .paciente(paciente)
                 .build();
-        return historiaRepository.save(h);
+        return toDTO(historiaRepository.save(h));
     }
 
     @Transactional(readOnly = true)
-    public HistoriaClinica obtenerPorPaciente(Long pacienteId) {
-        return historiaRepository.findByPacienteId(pacienteId)
+    public HistoriaClinicaResponseDTO obtenerPorPaciente(Long pacienteId) {
+        HistoriaClinica h = historiaRepository.findByPacienteId(pacienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("El paciente no tiene historia clínica"));
+        return toDTO(h);
     }
 
-    public HistoriaClinica actualizar(Long pacienteId, HistoriaClinicaDTO dto) {
-        HistoriaClinica h = obtenerPorPaciente(pacienteId);
+    public HistoriaClinicaResponseDTO actualizar(Long pacienteId, HistoriaClinicaDTO dto) {
+        HistoriaClinica h = historiaRepository.findByPacienteId(pacienteId)
+                .orElseThrow(() -> new ResourceNotFoundException("El paciente no tiene historia clínica"));
         if (!h.getNumeroHistoria().equals(dto.numeroHistoria())
                 && historiaRepository.existsByNumeroHistoria(dto.numeroHistoria()))
             throw new DuplicateResourceException("Ya existe la historia " + dto.numeroHistoria());
         h.setNumeroHistoria(dto.numeroHistoria().trim());
         h.setFechaApertura(dto.fechaApertura());
         h.setObservaciones(dto.observaciones());
-        return historiaRepository.save(h);
+        return toDTO(historiaRepository.save(h));
+    }
+
+    private HistoriaClinicaResponseDTO toDTO(HistoriaClinica h) {
+        return new HistoriaClinicaResponseDTO(
+                h.getId(), h.getNumeroHistoria(), h.getFechaApertura(),
+                h.getObservaciones(), h.getPaciente().getId());
     }
 }

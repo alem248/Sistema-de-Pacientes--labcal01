@@ -1,5 +1,6 @@
 package com.alex.paciente.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ public class HistoriaClinica {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paciente_id", nullable = false, unique = true,
             foreignKey = @ForeignKey(name = "fk_historia_paciente"))

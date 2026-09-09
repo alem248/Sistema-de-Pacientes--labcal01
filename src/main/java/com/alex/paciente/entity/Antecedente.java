@@ -2,6 +2,7 @@ package com.alex.paciente.entity;
 
 import com.alex.paciente.enums.CategoriaAntecedente;
 import com.alex.paciente.enums.TipoAntecedente;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -49,6 +50,7 @@ public class Antecedente {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "paciente_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_antecedente_paciente"))

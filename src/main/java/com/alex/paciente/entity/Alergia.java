@@ -1,6 +1,7 @@
 package com.alex.paciente.entity;
 
 import com.alex.paciente.enums.TipoAlergia;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
@@ -34,10 +35,12 @@ public class Alergia {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @JsonIgnore
     @Builder.Default
     @ManyToMany(mappedBy = "alergias", fetch = FetchType.LAZY)
     private Set<Paciente> pacientes = new HashSet<>();
 
+    @JsonIgnore
     @Builder.Default
     @OneToMany(mappedBy = "alergia", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<PacienteAlergia> pacienteAlergias = new HashSet<>();
