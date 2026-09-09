@@ -52,7 +52,6 @@ public class PacienteController {
 
         if (esBusquedaAvanzada) {
             pacientes = pacienteService.busquedaAvanzada(codigo, documento, nombres, apellidos, telefono);
-            model.addAttribute("busquedaAvanzada", true);
         } else if (q != null && !q.isBlank()) {
             pacientes = pacienteService.buscar(q);
         } else {
@@ -61,6 +60,7 @@ public class PacienteController {
 
         model.addAttribute("pacientes", pacientes);
         model.addAttribute("q", q);
+        model.addAttribute("busquedaAvanzada", esBusquedaAvanzada);
         model.addAttribute("total", pacientes.size());
         model.addAttribute("codigo", codigo);
         model.addAttribute("documento", documento);
