@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Paciente ' + ${paciente.codigoPaciente}">Detalle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/pacientes"><i class="bi bi-hospital"></i> Sistema de Pacientes</a>
+        <div>
+            <a th:href="@{'/pacientes/' + ${paciente.id} + '/editar'}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+            <a href="/pacientes" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+        </div>
+    </div>
+</nav>
+<div class="container mt-4">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show"><span th:text="${success}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show"><span th:text="${error}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+
+    <!-- Cabecera paciente -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 text-center">
+                    <img th:if="${paciente.fotoUrl != null}" th:src="${paciente.fotoUrl}" class="rounded-circle border" style="width:120px;height:120px;object-fit:cover;">
+                    <div th:if="${paciente.fotoUrl == null}" class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width:120px;height:120px;">
+                        <i class="bi bi-person" style="font-size:4rem;color:white;"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span th:if="${paciente.estadoRegistro.name() == 'ACTIVO'}" class="badge bg-success">Activo</span>
+                        <span th:if="${paciente.estadoRegistro.name() == 'INACTIVO'}" class="badge bg-warning text-dark">Inactivo</span>
+                        <span th:if="${paciente.estadoRegistro.name() == 'FALLECIDO'}" class="badge bg-dark">Fallecido</span>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <h3 class="mb-1" th:text="${paciente.nombreCompleto}">Nombre Completo</h3>
+                    <p class="text-muted mb-2">
+                        <span class="badge bg-info" th:text="${paciente.codigoPaciente}">PAC-000001</span>
+                        <span class="badge bg-secondary" th:text="${paciente.tipoDocumento} + ' ' + ${paciente.numeroDocumento}">DNI 12345678</span>
+                        <span class="badge bg-light text-dark border" th:text="${paciente.edad} + ' años'">30 años</span>
+                    </p>
+                    <div class="row small">
+                        <div class="col-sm-6"><strong><i class="bi bi-calendar"></i> Nacimiento:</strong> <span th:text="${paciente.fechaNacimiento}">1990-01-01</span></div>
+                        <div class="col-sm-6"><strong><i class="bi bi-gender-ambiguous"></i> Sexo:</strong> <span th:text="${paciente.sexo.displayName}">Masculino</span> | <span th:text="${paciente.estadoCivil.displayName}">Soltero</span></div>
+                        <div class="col-sm-6"><strong><i class="bi bi-telephone"></i> Teléfono:</strong> <span th:text="${paciente.telefono}">987654321</span></div>
+                        <div class="col-sm-6"><strong><i class="bi bi-envelope"></i> Correo:</strong> <span th:text="${paciente.correo != null ? paciente.correo : '-'}">-</span></div>
+                        <div class="col-sm-6"><strong><i class="bi bi-droplet"></i> Sangre:</strong> <span th:text="${paciente.tipoSangre != null ? paciente.tipoSangre.displayName : '-'}">O+</span></div>
+                        <div class="col-sm-6"><strong><i class="bi bi-briefcase"></i> Ocupación:</strong> <span th:text="${paciente.ocupacion != null ? paciente.ocupacion : '-'}">-</span></div>
+                        <div class="col-12 mt-1"><strong><i class="bi bi-geo-alt"></i> Dirección:</strong> <span th:text="${paciente.direccion} + ', ' + ${paciente.distrito} + ' - ' + ${paciente.provincia} + ' - ' + ${paciente.departamento}">Dirección</span></div>
+                    </div>
+                </div>
+                <div class="col-md-3 border-start">
+                    <h6 class="text-muted">Gestión de Estado</h6>
+                    <p class="small text-muted">No eliminar físicamente. Cambiar estado conserva historial (Fallecido/Inactivo).</p>
+                    <form th:action="@{'/pacientes/' + ${paciente.id} + '/estado'}" method="post" class="d-grid gap-1">
+                        <select name="estado" class="form-select form-select-sm">
+                            <option th:each="er : ${estadosRegistro}" th:value="${er}" th:text="${er.displayName}" th:selected="${er == paciente.estadoRegistro}"></option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Cambiar Estado</button>
+                    </form>
+                    <hr>
+                    <div class="small text-muted">
+                        <div><i class="bi bi-clock"></i> Registro: <span th:text="${#temporals.format(paciente.fechaRegistro, 'dd/MM/yyyy HH:mm')}">fecha</span></div>
+                        <div th:if="${paciente.fechaActualizacion != null}"><i class="bi bi-pencil"></i> Actualizado: <span th:text="${#temporals.format(paciente.fechaActualizacion, 'dd/MM/yyyy HH:mm')}">fecha</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contactos Emergencia -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-person-lines-fill text-danger"></i> Contactos de Emergencia</h5>
+                    <span class="badge bg-danger" th:text="${contactos.size()}">0</span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(contactos)}" class="text-center py-3 text-muted">Sin contactos registrados</div>
+                    <div th:each="c : ${contactos}" class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${c.nombreCompleto}">Nombre</strong>
+                            <span th:if="${c.esPrincipal}" class="badge bg-danger">Principal</span>
+                        </div>
+                        <small class="text-muted" th:text="${c.parentesco}">Parentesco</small> |
+                        <small th:text="${c.telefono}">Tel</small><br>
+                        <small th:text="${c.direccion != null ? c.direccion : ''}">Dirección</small>
+                        <small th:if="${c.correo != null}" th:text="' | ' + ${c.correo}">correo</small>
+                        <form th:action="@{'/pacientes/' + ${paciente.id} + '/contactos/' + ${c.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar contacto?')"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                    <hr>
+                    <h6 class="text-muted">Agregar Contacto</h6>
+                    <form th:action="@{'/pacientes/' + ${paciente.id} + '/contactos'}" th:object="${nuevoContacto}" method="post" class="row g-2">
+                        <div class="col-md-6"><input type="text" th:field="*{nombreCompleto}" class="form-control form-control-sm" placeholder="Nombre completo *" required></div>
+                        <div class="col-md-3"><input type="text" th:field="*{parentesco}" class="form-control form-control-sm" placeholder="Parentesco *" required></div>
+                        <div class="col-md-3"><input type="text" th:field="*{telefono}" class="form-control form-control-sm" placeholder="Teléfono *" required></div>
+                        <div class="col-md-5"><input type="text" th:field="*{direccion}" class="form-control form-control-sm" placeholder="Dirección"></div>
+                        <div class="col-md-4"><input type="email" th:field="*{correo}" class="form-control form-control-sm" placeholder="Correo"></div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox" th:field="*{esPrincipal}" class="form-check-input" id="esPrincipal">
+                                <label class="form-check-label small" for="esPrincipal">Principal</label>
+                            </div>
+                        </div>
+                        <div class="col-12"><button type="submit" class="btn btn-sm btn-danger w-100"><i class="bi bi-plus"></i> Agregar Contacto</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seguros -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-shield-check text-primary"></i> Datos del Seguro</h5>
+                    <span class="badge bg-primary" th:text="${seguros.size()}">0</span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(seguros)}" class="text-center py-3 text-muted">Sin seguros registrados</div>
+                    <div th:each="s : ${seguros}" class="border rounded p-2 mb-2">
+                        <strong th:text="${s.tipoSeguro.displayName} + ' - ' + ${s.empresaAseguradora}">SIS - Empresa</strong>
+                        <span class="badge bg-success" th:if="${s.estadoCobertura.name() == 'ACTIVO'}" th:text="${s.estadoCobertura.displayName}">Activo</span>
+                        <span class="badge bg-warning text-dark" th:if="${s.estadoCobertura.name() != 'ACTIVO'}" th:text="${s.estadoCobertura.displayName}">Vencido</span>
+                        <br>
+                        <small>Póliza: <span th:text="${s.numeroPoliza != null ? s.numeroPoliza : '-'}">-</span> | Afiliación: <span th:text="${s.numeroAfiliacion != null ? s.numeroAfiliacion : '-'}">-</span></small><br>
+                        <small>Vigencia: <span th:text="${s.fechaInicio != null ? s.fechaInicio : '-'}">-</span> al <span th:text="${s.fechaVencimiento != null ? s.fechaVencimiento : '-'}">-</span></small>
+                        <form th:action="@{'/pacientes/' + ${paciente.id} + '/seguros/' + ${s.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar seguro?')"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                    <hr>
+                    <h6 class="text-muted">Agregar Seguro</h6>
+                    <form th:action="@{'/pacientes/' + ${paciente.id} + '/seguros'}" th:object="${nuevoSeguro}" method="post" class="row g-2">
+                        <div class="col-md-4">
+                            <select th:field="*{tipoSeguro}" class="form-select form-select-sm" required>
+                                <option value="">Tipo Seguro</option>
+                                <option th:each="t : ${tiposSeguro}" th:value="${t}" th:text="${t.displayName}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-8"><input type="text" th:field="*{empresaAseguradora}" class="form-control form-control-sm" placeholder="Empresa aseguradora *" required></div>
+                        <div class="col-md-6"><input type="text" th:field="*{numeroPoliza}" class="form-control form-control-sm" placeholder="Nro Póliza"></div>
+                        <div class="col-md-6"><input type="text" th:field="*{numeroAfiliacion}" class="form-control form-control-sm" placeholder="Nro Afiliación"></div>
+                        <div class="col-md-4"><input type="date" th:field="*{fechaInicio}" class="form-control form-control-sm"></div>
+                        <div class="col-md-4"><input type="date" th:field="*{fechaVencimiento}" class="form-control form-control-sm"></div>
+                        <div class="col-md-4">
+                            <select th:field="*{estadoCobertura}" class="form-select form-select-sm">
+                                <option th:each="ec : ${estadosCobertura}" th:value="${ec}" th:text="${ec.displayName}"></option>
+                            </select>
+                        </div>
+                        <div class="col-12"><button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus"></i> Agregar Seguro</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Antecedentes -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clipboard2-pulse text-success"></i> Antecedentes del Paciente</h5>
+            <span class="badge bg-success" th:text="${antecedentes.size()}">0</span>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(antecedentes)}" class="text-center py-3 text-muted">Sin antecedentes registrados</div>
+            <div th:each="a : ${antecedentes}" class="border-start border-4 p-2 mb-2"
+                 th:classappend="${a.categoria.name() == 'PERSONAL'} ? 'border-primary' : (${a.categoria.name() == 'FAMILIAR'} ? 'border-warning' : 'border-danger')">
+                <div class="d-flex justify-content-between">
+                    <strong><span class="badge" th:classappend="${a.categoria.name() == 'ALERGIA'} ? 'bg-danger' : (${a.categoria.name() == 'FAMILIAR'} ? 'bg-warning text-dark' : 'bg-primary')" th:text="${a.categoria.displayName}">Personal</span>
+                        <span th:text="${a.tipo}">Diabetes</span></strong>
+                    <small class="text-muted" th:text="${#temporals.format(a.fechaRegistro, 'dd/MM/yyyy')}">fecha</small>
+                </div>
+                <p class="mb-1 small" th:text="${a.descripcion}">Descripción</p>
+                <small th:if="${a.reaccion != null}" class="text-danger"><i class="bi bi-exclamation-circle"></i> Reacción: <span th:text="${a.reaccion}"></span></small>
+                <form th:action="@{'/pacientes/' + ${paciente.id} + '/antecedentes/' + ${a.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar antecedente?')"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+            <hr>
+            <h6 class="text-muted">Registrar Antecedente</h6>
+            <form th:action="@{'/pacientes/' + ${paciente.id} + '/antecedentes'}" th:object="${nuevoAntecedente}" method="post" class="row g-2">
+                <div class="col-md-3">
+                    <select th:field="*{categoria}" class="form-select form-select-sm" required>
+                        <option value="">Categoría</option>
+                        <option th:each="cat : ${categoriasAntecedente}" th:value="${cat}" th:text="${cat.displayName}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3"><input type="text" th:field="*{tipo}" class="form-control form-control-sm" placeholder="Tipo ej: Diabetes, Cirugía, Penicilina" required></div>
+                <div class="col-md-3"><input type="text" th:field="*{reaccion}" class="form-control form-control-sm" placeholder="Reacción (si alergia)"></div>
+                <div class="col-md-12"><textarea th:field="*{descripcion}" class="form-control form-control-sm" rows="2" placeholder="Descripción detallada *" required></textarea></div>
+                <div class="col-12"><button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-plus"></i> Registrar Antecedente</button></div>
+            </form>
+            <div class="mt-3 small text-muted">
+                <strong>Tipos sugeridos:</strong><br>
+                <span class="badge bg-primary">Personal: Enfermedades previas, Cirugías, Hospitalizaciones, Crónicas</span>
+                <span class="badge bg-warning text-dark">Familiar: Diabetes, Hipertensión, Cardiovasculares, Hereditarias</span>
+                <span class="badge bg-danger">Alergia: Medicamentos, Alimentos, Otras + Reacción</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
