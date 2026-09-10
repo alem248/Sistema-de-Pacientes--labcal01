@@ -28,14 +28,19 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
 
     private final PacienteRepository pacienteRepository;
     private final HistoriaClinicaRepository historiaRepository;
+    private final PacienteService pacienteService;
 
     @Override
     public PacienteResponseDTO crear(PacienteRequestDTO dto) {
         if (pacienteRepository.existsByDni(dto.dni()))
             throw new DuplicateResourceException("Ya existe un paciente con DNI " + dto.dni());
-        if (pacienteRepository.existsByCodigo(dto.codigo()))
-            throw new DuplicateResourceException("Ya existe un paciente con c├│digo " + dto.codigo());
-        Paciente p = toEntity(dto);
+        // RF-PAC-03: codigo opcional; si viene vacio se genera automaticamente (PAC-000001, ...)
+        String codigo = (dto.codigo() == null || dto.codigo().isBlank())
+                ? generarCodigoUnico()
+                : dto.codigo().trim();
+        if (pacienteRepository.existsByCodigo(codigo))
+            throw new DuplicateResourceException("Ya existe un paciente con codigo " + codigo);
+        Paciente p = toEntity(dto, codigo);
         return toDTO(pacienteRepository.save(p));
     }
 
@@ -62,9 +67,13 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
         Paciente p = getEntity(id);
         if (!p.getDni().equals(dto.dni()) && pacienteRepository.existsByDni(dto.dni()))
             throw new DuplicateResourceException("Ya existe un paciente con DNI " + dto.dni());
-        if (!p.getCodigo().equals(dto.codigo()) && pacienteRepository.existsByCodigo(dto.codigo()))
-            throw new DuplicateResourceException("Ya existe un paciente con c├│digo " + dto.codigo());
-        p.setCodigo(dto.codigo());
+        // En actualizacion el codigo sigue siendo opcional: vacio = conservar el actual
+        String nuevoCodigo = (dto.codigo() == null || dto.codigo().isBlank())
+                ? p.getCodigo()
+                : dto.codigo().trim();
+        if (!p.getCodigo().equals(nuevoCodigo) && pacienteRepository.existsByCodigo(nuevoCodigo))
+            throw new DuplicateResourceException("Ya existe un paciente con codigo " + nuevoCodigo);
+        p.setCodigo(nuevoCodigo);
         p.setDni(dto.dni());
         p.setNombres(dto.nombres());
         p.setApellidoPaterno(dto.apellidoPaterno());
@@ -150,9 +159,9 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontr├│ paciente con id " + id));
     }
 
-    private Paciente toEntity(PacienteRequestDTO dto) {
+    private Paciente toEntity(PacienteRequestDTO dto, String codigoResuelto) {
         return Paciente.builder()
-                .codigoPaciente(dto.codigo().trim())
+                .codigoPaciente(codigoResuelto)
                 .numeroDocumento(dto.dni().trim())
                 .nombres(dto.nombres().trim())
                 .apellidoPaterno(dto.apellidoPaterno().trim())
@@ -204,5 +213,19 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
 
     private String emptyToNull(String s) {
         return (s == null || s.isBlank()) ? null : s.trim();
+    }
+
+    /**
+     * RF-PAC-03: genera un codigo unico reutilizando el generador del modulo
+     * del companero (formato PAC-000001). Reintenta si ya existe.
+     */
+    private String generarCodigoUnico() {
+        String codigo = pacienteService.generarCodigoPaciente();
+        int intentos = 0;
+        while (pacienteRepository.existsByCodigo(codigo) && intentos < 1000) {
+            codigo = pacienteService.generarCodigoPaciente();
+            intentos++;
+        }
+        return codigo;
     }
 }
