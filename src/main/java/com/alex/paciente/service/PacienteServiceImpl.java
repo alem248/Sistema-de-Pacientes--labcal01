@@ -49,6 +49,12 @@ public class PacienteServiceImpl implements PacienteService {
         return String.format("PAC-%06d", siguiente);
     }
 
+    // ================= RF-PAC-03/04: Verificación de código único =================
+    @Override
+    public boolean existeCodigoUnico(String codigoPaciente) {
+        return pacienteRepository.existsByCodigoPaciente(codigoPaciente);
+    }
+
     // ================= RF-PAC-04: Registro con DTO =================
     @Override
     public Paciente registrarPacienteDesdeDTO(PacienteCreateDTO dto) {
