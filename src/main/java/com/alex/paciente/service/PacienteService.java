@@ -15,6 +15,9 @@ public interface PacienteService {
     // RF-PAC-03: Generar código único
     String generarCodigoPaciente();
 
+    // RF-PAC-04: Verificar si existe el código único
+    boolean existeCodigoUnico(String codigoPaciente);
+
     // RF-PAC-04: Registrar información personal y contacto usando DTO con validaciones
     Paciente registrarPacienteDesdeDTO(PacienteCreateDTO dto);
 
