@@ -6,6 +6,55 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 
 ---
 
+## 🔐 Evaluación 02 — Seguridad, Auditoría y Pruebas
+
+### RF-PAC-05: Búsqueda de pacientes
+- **Por documento**: `GET /api/v1/pacientes/dni/{dni}` y `GET /pacientes?documento=...`
+- **Por código**: `GET /api/v1/pacientes/codigo/{codigo}` y `GET /pacientes?codigo=...`
+- **Por nombres**: `GET /api/v1/pacientes/buscar-nombres?nombres=...`
+- **Por apellidos**: `GET /api/v1/pacientes/buscar-apellidos?apellidos=...`
+- **General (un solo texto)**: `GET /api/v1/pacientes/buscar?q=...` (documento, código, nombres, apellidos, teléfono, historia)
+- **Avanzada combinada**: `GET /api/v1/pacientes/search?dni=&codigo=&nombres=&apellidos=&telefono=&historia=`
+- **Validación de parámetros**: mínimo 2 caracteres, formato de DNI alfanumérico 8-20, respuesta `400` con detalle del campo
+
+### RF-PAC-06: Información completa del paciente
+- **API REST**: `GET /api/v1/pacientes/{id}/completo` → `PacienteDetalleResponseDTO` con datos personales, edad calculada, contactos de emergencia, seguros, antecedentes, alergias (con reacción y severidad) e historia clínica
+- **Vista web**: `GET /pacientes/{id}` muestra la ficha completa (incluye historia clínica y alergias)
+
+### Seguridad (Spring Security 7)
+- **Roles**: `ADMINISTRADOR`, `MEDICO`, `RECEPCIONISTA` (entidades `Rol` y `Usuario` con relación `@ManyToOne`)
+- **Autenticación**: formulario de login (`/login`) + HTTP Basic para la API REST
+- **Autorización en dos capas** (defensa en profundidad):
+  1. Reglas de URL en `SecurityConfig` (matriz de acceso por rol)
+  2. `@PreAuthorize` por método en los controladores REST
+- **Redirección por rol** tras el login: ADMINISTRADOR → `/auditoria`, MÉDICO/RECEPCIONISTA → `/pacientes`
+- **Contraseñas** con hash BCrypt; usuarios demo: `admin/admin123`, `medico/medico123`, `recepcionista/recep123`
+- **Respuestas de error de seguridad en JSON** para la API: `401` (no autenticado) y `403` (sin permiso)
+- **CSRF** activo para el módulo web (Thymeleaf inyecta el token automáticamente), desactivado para la API REST stateless
+
+### Auditoría (AOP)
+- Tabla `auditoria`: **usuario, fecha/hora, operación, entidad, id del registro afectado**
+- Anotación `@Auditable` + aspecto `AuditoriaAspect` (`@AfterReturning`): registra automáticamente `REGISTRO`, `MODIFICACION`, `ELIMINACION` y `CONSULTA` sin tocar el código de negocio
+- La bitácora es consultable en `GET /auditoria` (solo ADMINISTRADOR)
+- La auditoría nunca interrumpe la operación de negocio (fallo aislado con log)
+
+### Gestión de errores
+- `GlobalExceptionHandler` centralizado: `400` validación (cuerpo y parámetros), `401`, `403`, `404`, `409` duplicados, `500` genérico — todos con cuerpo JSON estándar `{timestamp, status, error, message}`
+
+### Pruebas automatizadas (30 tests, H2 en memoria)
+| Tipo | Clase | Cobertura |
+|------|-------|-----------|
+| Repositorio | `PacienteRepositoryTest` | Búsquedas RF-PAC-05 (documento, código, nombres, apellidos, paginación, duplicados) |
+| Servicio (Mockito) | `PacienteConsultaServiceTest` | Búsquedas, ficha completa RF-PAC-06, errores 404 |
+| Controlador + seguridad | `PacienteRestControllerSecurityTest` | 401 sin login, 403 por rol, 200 autorizado, 400 validación, 404 |
+| Integración | `AuditoriaIntegrationTest` | El aspecto AOP registra usuario/operación/entidad/id en la bitácora |
+
+```bash
+.\mvnw.cmd test        # ejecuta los 30 tests con H2 (no requiere MySQL)
+```
+
+---
+
 ## 🧩 Requerimientos Implementados
 
 ### Registro de Pacientes (RF-PAC-04)
@@ -51,7 +100,9 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 
 - **Java 21**, **Spring Boot 4.1.1**
 - **Spring Data JPA**, **Hibernate**, **Thymeleaf**, **Validation**, **Lombok**
-- **MySQL 8** (XAMPP) + **SQLyog** para administración
+- **Spring Security 7** (autenticación, autorización por roles, BCrypt)
+- **Spring AOP** (auditoría automática con `@Auditable`)
+- **MySQL 8** (XAMPP) + **SQLyog** para administración · **H2** para pruebas
 - **Maven**, **IntelliJ IDEA**
 
 ---
@@ -92,34 +143,58 @@ Sistema de **Registro de Pacientes** desarrollado con **IntelliJ IDEA**, **XAMPP
 ```
 src/main/java/com/alex/paciente (paquete principal - lowercase)
   ├── entity/
-  │   ├── Paciente.java:18            # RF-PAC-03/04, edad calculada, fotoUrl
-  │   ├── ContactoEmergencia.java:10
-  │   ├── SeguroPaciente.java:10
-  │   ├── Antecedente.java:10
+  │   ├── Paciente.java               # RF-PAC-03/04, edad calculada, fotoUrl
+  │   ├── ContactoEmergencia.java
+  │   ├── SeguroPaciente.java
+  │   ├── Antecedente.java
+  │   ├── Rol.java                    # Pregunta 3: roles del sistema
+  │   ├── Usuario.java                # Pregunta 3: @ManyToOne Rol, password BCrypt
+  │   ├── Auditoria.java              # Pregunta 2: bitácora (usuario, fecha, op, entidad, id)
   │   └── enums/ (8 enums)
   ├── repository/
-  │   ├── PacienteRepository.java:12  # buscarGeneral, busqueda avanzada
-  │   └── ...
+  │   ├── PacienteRepository.java     # buscarGeneral, busqueda avanzada, paginada
+  │   ├── UsuarioRepository.java / RolRepository.java
+  │   └── AuditoriaRepository.java
   ├── service/
   │   ├── PacienteService.java        # Interfaz RF-PAC-03/04
-  │   └── PacienteServiceImpl.java:43 # generarCodigoPaciente, evitar duplicados
+  │   ├── PacienteServiceImpl.java    # generarCodigoPaciente, evitar duplicados
+  │   └── PacienteConsultaService.java # RF-PAC-05/06: búsquedas + ficha completa
   ├── controller/
-  │   ├── PacienteController.java:32  # MVC + foto upload + AJAX verificar-documento
-  │   └── HomeController.java
-  └── config/WebConfig.java           # /uploads/** handler
-
-# Paquete colaborador (compatibilidad):
-src/main/java/com/alex/Paciente (uppercase - se migrará a lowercase en próximo refactor)
-  └── exception/DocumentoDuplicadoException.java
+  │   ├── PacienteController.java     # MVC + foto upload + AJAX verificar-documento
+  │   ├── PacienteRestController.java # API REST RF-PAC-05/06 + @PreAuthorize
+  │   ├── AuditoriaController.java    # Bitácora (solo ADMINISTRADOR)
+  │   └── AuthController.java         # /login y /acceso-denegado
+  ├── security/
+  │   ├── SecurityConfig.java         # Matriz de acceso por rol + 401/403 JSON
+  │   ├── UsuarioDetailsService.java  # UserDetailsService con ROLE_*
+  │   ├── RolAuthenticationSuccessHandler.java # Redirección por rol
+  │   └── DatosSeguridadSeeder.java   # Roles + usuarios demo (idempotente)
+  ├── audit/
+  │   ├── Auditable.java              # Anotación de auditoría
+  │   └── AuditoriaAspect.java        # Aspecto AOP @AfterReturning
+  ├── dto/
+  │   ├── PacienteRequestDTO.java / PacienteResponseDTO.java
+  │   └── PacienteDetalleResponseDTO.java  # RF-PAC-06: ficha completa
+  ├── exception/
+  │   └── GlobalExceptionHandler.java # 400/401/403/404/409/500 estándar
+  └── config/
+      ├── WebConfig.java              # /uploads/** handler
+      └── SeguridadModelAdvice.java   # usuario/roles en las vistas Thymeleaf
 
 src/main/resources/
   ├── application.properties
-  ├── db/schema.sql                   # Script SQLyog principal (db_pacientes)
+  ├── db/schema.sql                   # Script SQLyog (incluye rol, usuario, auditoria)
   ├── sql/pacientes.sql               # Script colaborador (sistema_pacientes)
-  └── templates/paciente/ y pacientes/
-      ├── lista.html
-      ├── formulario.html
-      └── detalle.html
+  └── templates/
+      ├── login.html / acceso-denegado.html
+      ├── paciente/ (lista, formulario, detalle)
+      └── auditoria/lista.html
+
+src/test/java/com/alex/paciente/
+  ├── repository/PacienteRepositoryTest.java        # @DataJpaTest + H2
+  ├── service/PacienteConsultaServiceTest.java      # Mockito
+  ├── controller/PacienteRestControllerSecurityTest.java # @WebMvcTest + @WithMockUser
+  └── audit/AuditoriaIntegrationTest.java           # @SpringBootTest: AOP real
 ```
 
 ---
@@ -157,11 +232,11 @@ Para trabajo conjunto: cada integrante hace `git pull`, crea rama feature, commi
 # Compilar (requiere Java 21)
 .\mvnw.cmd clean compile
 
-# Ejecutar
+# Ejecutar (requiere MySQL/XAMPP con la BD creada por schema.sql)
 .\mvnw.cmd spring-boot:run
 # o Run desde IntelliJ IDEA
 
-# Tests (si aplica)
+# Tests automatizados (H2 en memoria, no requiere MySQL)
 .\mvnw.cmd test
 ```
 
@@ -169,10 +244,19 @@ Flujo de prueba:
 
 1. `GET /pacientes/nuevo` -> registrar paciente DNI `12345678` -> código `PAC-000001` autogenerado
 2. Intentar registrar mismo DNI -> error "ya está registrado"
-3. `GET /pacientes?q=Juan` -> búsqueda
-4. `GET /pacientes/1` -> detalle + agregar contacto principal + seguro SIS + antecedente alergia penicilina
+3. `GET /pacientes?q=Juan` -> búsqueda (RF-PAC-05)
+4. `GET /pacientes/1` -> detalle completo: contactos, seguros, antecedentes, historia clínica y alergias (RF-PAC-06)
 5. `POST /pacientes/1/estado` -> cambiar a Fallecido -> conserva historial
 6. Subir foto -> se guarda en `uploads/` y se muestra en lista/detalle
+
+Flujo de seguridad y auditoría (Evaluación 02):
+
+1. `GET /pacientes` sin sesión -> redirige a `/login`
+2. Login `admin/admin123` -> redirige a `/auditoria` (bitácora)
+3. Login `medico/medico123` -> redirige a `/pacientes`
+4. `GET /api/v1/pacientes/buscar?q=perez` con HTTP Basic -> resultados paginados
+5. `DELETE /api/v1/pacientes/1` con rol MÉDICO -> `403` JSON
+6. Registrar/editar/eliminar pacientes -> aparece en `/auditoria` con usuario, fecha/hora, operación, entidad e id
 
 ---
 
