@@ -1,5 +1,6 @@
 package com.alex.paciente.service;
 
+import com.alex.paciente.dto.PacienteCreateDTO;
 import com.alex.paciente.entity.Antecedente;
 import com.alex.paciente.entity.ContactoEmergencia;
 import com.alex.paciente.entity.Paciente;
@@ -13,6 +14,9 @@ public interface PacienteService {
 
     // RF-PAC-03: Generar código único
     String generarCodigoPaciente();
+
+    // RF-PAC-04: Registrar información personal y contacto usando DTO con validaciones
+    Paciente registrarPacienteDesdeDTO(PacienteCreateDTO dto);
 
     // RF-PAC-04: Registrar información personal y contacto + validaciones
     Paciente registrarPaciente(Paciente paciente);
