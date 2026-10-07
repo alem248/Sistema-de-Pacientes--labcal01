@@ -11,9 +11,13 @@
 <nav class="navbar navbar-dark bg-primary">
     <div class="container">
         <a class="navbar-brand" href="/pacientes"><i class="bi bi-hospital"></i> Sistema de Pacientes</a>
-        <div>
-            <a th:href="@{'/pacientes/' + ${paciente.id} + '/editar'}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+        <div class="d-flex align-items-center gap-2">
+            <a th:if="${esAdministrador or esRecepcionista}" th:href="@{'/pacientes/' + ${paciente.id} + '/editar'}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar</a>
             <a href="/pacientes" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+            <span class="text-white small" th:if="${autenticado}"><i class="bi bi-person-circle"></i> <span th:text="${usuarioActual}">usuario</span></span>
+            <form th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i></button>
+            </form>
         </div>
     </div>
 </nav>
@@ -53,7 +57,7 @@
                         <div class="col-12 mt-1"><strong><i class="bi bi-geo-alt"></i> Dirección:</strong> <span th:text="${paciente.direccion} + ', ' + ${paciente.distrito} + ' - ' + ${paciente.provincia} + ' - ' + ${paciente.departamento}">Dirección</span></div>
                     </div>
                 </div>
-                <div class="col-md-3 border-start">
+                <div class="col-md-3 border-start" th:if="${esAdministrador or esRecepcionista}">
                     <h6 class="text-muted">Gestión de Estado</h6>
                     <p class="small text-muted">No eliminar físicamente. Cambiar estado conserva historial (Fallecido/Inactivo).</p>
                     <form th:action="@{'/pacientes/' + ${paciente.id} + '/estado'}" method="post" class="d-grid gap-1">
@@ -91,10 +95,11 @@
                         <small th:text="${c.telefono}">Tel</small><br>
                         <small th:text="${c.direccion != null ? c.direccion : ''}">Dirección</small>
                         <small th:if="${c.correo != null}" th:text="' | ' + ${c.correo}">correo</small>
-                        <form th:action="@{'/pacientes/' + ${paciente.id} + '/contactos/' + ${c.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                        <form th:if="${esAdministrador or esRecepcionista}" th:action="@{'/pacientes/' + ${paciente.id} + '/contactos/' + ${c.id} + '/eliminar'}" method="post" class="d-inline float-end">
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar contacto?')"><i class="bi bi-trash"></i></button>
                         </form>
                     </div>
+                    <div th:if="${esAdministrador or esRecepcionista}">
                     <hr>
                     <h6 class="text-muted">Agregar Contacto</h6>
                     <form th:action="@{'/pacientes/' + ${paciente.id} + '/contactos'}" th:object="${nuevoContacto}" method="post" class="row g-2">
@@ -111,6 +116,7 @@
                         </div>
                         <div class="col-12"><button type="submit" class="btn btn-sm btn-danger w-100"><i class="bi bi-plus"></i> Agregar Contacto</button></div>
                     </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -131,10 +137,11 @@
                         <br>
                         <small>Póliza: <span th:text="${s.numeroPoliza != null ? s.numeroPoliza : '-'}">-</span> | Afiliación: <span th:text="${s.numeroAfiliacion != null ? s.numeroAfiliacion : '-'}">-</span></small><br>
                         <small>Vigencia: <span th:text="${s.fechaInicio != null ? s.fechaInicio : '-'}">-</span> al <span th:text="${s.fechaVencimiento != null ? s.fechaVencimiento : '-'}">-</span></small>
-                        <form th:action="@{'/pacientes/' + ${paciente.id} + '/seguros/' + ${s.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                        <form th:if="${esAdministrador or esRecepcionista}" th:action="@{'/pacientes/' + ${paciente.id} + '/seguros/' + ${s.id} + '/eliminar'}" method="post" class="d-inline float-end">
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar seguro?')"><i class="bi bi-trash"></i></button>
                         </form>
                     </div>
+                    <div th:if="${esAdministrador or esRecepcionista}">
                     <hr>
                     <h6 class="text-muted">Agregar Seguro</h6>
                     <form th:action="@{'/pacientes/' + ${paciente.id} + '/seguros'}" th:object="${nuevoSeguro}" method="post" class="row g-2">
@@ -156,6 +163,7 @@
                         </div>
                         <div class="col-12"><button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus"></i> Agregar Seguro</button></div>
                     </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -178,10 +186,11 @@
                 </div>
                 <p class="mb-1 small" th:text="${a.descripcion}">Descripción</p>
                 <small th:if="${a.reaccion != null}" class="text-danger"><i class="bi bi-exclamation-circle"></i> Reacción: <span th:text="${a.reaccion}"></span></small>
-                <form th:action="@{'/pacientes/' + ${paciente.id} + '/antecedentes/' + ${a.id} + '/eliminar'}" method="post" class="d-inline float-end">
+                <form th:if="${esAdministrador or esMedico}" th:action="@{'/pacientes/' + ${paciente.id} + '/antecedentes/' + ${a.id} + '/eliminar'}" method="post" class="d-inline float-end">
                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar antecedente?')"><i class="bi bi-trash"></i></button>
                 </form>
             </div>
+            <div th:if="${esAdministrador or esMedico}">
             <hr>
             <h6 class="text-muted">Registrar Antecedente</h6>
             <form th:action="@{'/pacientes/' + ${paciente.id} + '/antecedentes'}" th:object="${nuevoAntecedente}" method="post" class="row g-2">
@@ -196,11 +205,53 @@
                 <div class="col-md-12"><textarea th:field="*{descripcion}" class="form-control form-control-sm" rows="2" placeholder="Descripción detallada *" required></textarea></div>
                 <div class="col-12"><button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-plus"></i> Registrar Antecedente</button></div>
             </form>
+            </div>
             <div class="mt-3 small text-muted">
                 <strong>Tipos sugeridos:</strong><br>
                 <span class="badge bg-primary">Personal: Enfermedades previas, Cirugías, Hospitalizaciones, Crónicas</span>
                 <span class="badge bg-warning text-dark">Familiar: Diabetes, Hipertensión, Cardiovasculares, Hereditarias</span>
                 <span class="badge bg-danger">Alergia: Medicamentos, Alimentos, Otras + Reacción</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RF-PAC-06: Historia Clínica + Alergias completan la información del paciente -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-file-medical text-info"></i> Historia Clínica</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${historia == null}" class="text-center py-3 text-muted">Sin historia clínica registrada</div>
+                    <div th:if="${historia != null}">
+                        <p><span class="badge bg-info" th:text="${historia.numeroHistoria}">HC-000001</span></p>
+                        <p class="mb-1"><strong>Apertura:</strong> <span th:text="${historia.fechaApertura}">fecha</span></p>
+                        <p class="mb-0"><strong>Observaciones:</strong><br>
+                            <span class="text-muted" th:text="${historia.observaciones != null ? historia.observaciones : 'Sin observaciones'}">obs</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-diamond text-danger"></i> Alergias</h5>
+                    <span class="badge bg-danger" th:text="${alergias != null ? alergias.size() : 0}">0</span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${alergias == null or #lists.isEmpty(alergias)}" class="text-center py-3 text-muted">Sin alergias registradas</div>
+                    <div th:each="pa : ${alergias}" class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${pa.alergia.nombre}">Penicilina</strong>
+                            <span th:if="${pa.severidad != null}" class="badge"
+                                  th:classappend="${pa.severidad.name() == 'GRAVE' ? 'bg-danger' : (${pa.severidad.name() == 'MODERADA' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                  th:text="${pa.severidad}">LEVE</span>
+                        </div>
+                        <small class="text-muted" th:text="${pa.alergia.tipo}">MEDICAMENTO</small><br>
+                        <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Reacción: <span th:text="${pa.reaccion}">reacción</span></small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
