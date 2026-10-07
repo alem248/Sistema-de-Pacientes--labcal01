@@ -1,6 +1,6 @@
 package com.alex.paciente.controller;
 
-import com.alex.paciente.dto.PacienteRequestDTO;
+import com.alex.paciente.dto.PacienteCreateDTO;
 import com.alex.paciente.dto.PacienteResponseDTO;
 import com.alex.paciente.service.PacienteConsultaService;
 import jakarta.validation.Valid;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Req.6 - B├║squeda de pacientes: DNI, c├│digo, nombres, apellidos, tel├®fono, historia cl├¡nica.
+ * Req.6 - Búsqueda de pacientes: DNI, código, nombres, apellidos, teléfono, historia clínica.
  * CRUD base + endpoints de consulta.
  */
 @RestController
@@ -26,8 +26,28 @@ public class PacienteRestController {
     private final PacienteConsultaService pacienteService;
 
     @PostMapping
-    public ResponseEntity<PacienteResponseDTO> crear(@Valid @RequestBody PacienteRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(pacienteService.crear(dto));
+    public ResponseEntity<PacienteResponseDTO> crear(@Valid @RequestBody PacienteCreateDTO dto) {
+        Paciente paciente = pacienteService.registrarPacienteDesdeDTO(dto);
+        // Convertir a DTO de respuesta
+        PacienteResponseDTO dtoRespuesta = new PacienteResponseDTO(
+                paciente.getId(),
+                paciente.getCodigoPaciente(),
+                paciente.getNumeroDocumento(),
+                paciente.getNombres(),
+                paciente.getApellidoPaterno(),
+                paciente.getApellidoMaterno(),
+                paciente.getTelefono(),
+                paciente.getCorreo(),
+                paciente.getFechaNacimiento(),
+                paciente.getSexo() != null ? paciente.getSexo().name() : null,
+                paciente.getDireccion(),
+                paciente.getEstadoRegistro() != null ? paciente.getEstadoRegistro().name().equals("ACTIVO") : null,
+                paciente.getFechaRegistro(),
+                null, // numeroHistoria - se obtendría de historia clínica
+                0,    // totalAntecedentes
+                0     // totalAlergias
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(dtoRespuesta);
     }
 
     @GetMapping
@@ -47,7 +67,7 @@ public class PacienteRestController {
 
     @PutMapping("/{id}")
     public ResponseEntity<PacienteResponseDTO> actualizar(@PathVariable Long id,
-                                                          @Valid @RequestBody PacienteRequestDTO dto) {
+                                                          @Valid @RequestBody PacienteCreateDTO dto) {
         return ResponseEntity.ok(pacienteService.actualizar(id, dto));
     }
 
@@ -57,7 +77,7 @@ public class PacienteRestController {
         return ResponseEntity.noContent().build();
     }
 
-    // ---------- Req.6: b├║squedas espec├¡ficas ----------
+    // ---------- Req.6: búsquedas específicas ----------
     @GetMapping("/dni/{dni}")
     public ResponseEntity<PacienteResponseDTO> porDni(@PathVariable String dni) {
         return ResponseEntity.ok(pacienteService.buscarPorDni(dni));
@@ -88,8 +108,7 @@ public class PacienteRestController {
         return ResponseEntity.ok(pacienteService.buscarPorTelefono(telefono));
     }
 
-    /**
-     * B├║squeda avanzada combinada. Todos los filtros son opcionales.
+    /** * Búsqueda avanzada combinada. Todos los filtros son opcionales.
      * Ej: GET /api/v1/pacientes/search?dni=123&nombres=juan&apellidos=perez&telefono=999&historia=HC-001&page=0&size=10
      */
     @GetMapping("/search")
@@ -105,8 +124,7 @@ public class PacienteRestController {
                 dni, codigo, nombres, apellidos, telefono, numeroHistoria, pageable));
     }
 
-    /**
-     * B├║squeda general con un solo texto.
+    /** Búsqueda general con un solo texto.
      * Ej: GET /api/v1/pacientes/buscar?q=perez
      */
     @GetMapping("/buscar")
