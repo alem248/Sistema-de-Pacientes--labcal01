@@ -11,8 +11,16 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
         <a class="navbar-brand" href="/pacientes"><i class="bi bi-hospital"></i> Sistema de Pacientes - LabCal01</a>
-        <div class="ms-auto">
-            <a href="/pacientes/nuevo" class="btn btn-light"><i class="bi bi-person-plus"></i> Nuevo Paciente</a>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <a th:if="${esAdministrador}" href="/auditoria" class="btn btn-outline-light"><i class="bi bi-journal-text"></i> Auditoría</a>
+            <!-- RF-PAC-03/04: registrar paciente -> solo ADMINISTRADOR y RECEPCIONISTA -->
+            <a th:if="${esAdministrador or esRecepcionista}" href="/pacientes/nuevo" class="btn btn-light"><i class="bi bi-person-plus"></i> Nuevo Paciente</a>
+            <span class="text-white small" th:if="${autenticado}">
+                <i class="bi bi-person-circle"></i> <span th:text="${usuarioActual}">usuario</span>
+            </span>
+            <form th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-light"><i class="bi bi-box-arrow-right"></i> Salir</button>
+            </form>
         </div>
     </div>
 </nav>
@@ -76,7 +84,7 @@
     <div class="card shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-people"></i> Listado de Pacientes <span class="badge bg-primary" th:text="${total}">0</span></h5>
-            <small class="text-muted">RF-PAC-03 Código único | RF-PAC-04 Datos personales</small>
+            <small class="text-muted">RF-PAC-05 Búsqueda | RF-PAC-06 Ficha completa</small>
         </div>
         <div class="card-body p-0">
             <div th:if="${#lists.isEmpty(pacientes)}" class="text-center py-5">
@@ -123,8 +131,10 @@
                             <span th:if="${p.estadoRegistro.name() == 'FALLECIDO'}" class="badge bg-dark">Fallecido</span>
                         </td>
                         <td>
+                            <!-- RF-PAC-06: ver ficha completa -> los tres roles -->
                             <a th:href="@{'/pacientes/' + ${p.id}}" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
-                            <a th:href="@{'/pacientes/' + ${p.id} + '/editar'}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                            <!-- Editar -> solo ADMINISTRADOR y RECEPCIONISTA -->
+                            <a th:if="${esAdministrador or esRecepcionista}" th:href="@{'/pacientes/' + ${p.id} + '/editar'}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
                         </td>
                     </tr>
                     </tbody>

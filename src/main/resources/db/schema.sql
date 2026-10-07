@@ -97,3 +97,65 @@ CREATE TABLE IF NOT EXISTS antecedente (
 -- ------------------------------
 -- INSERT INTO paciente (codigo_paciente, tipo_documento, numero_documento, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, sexo, estado_civil, telefono, correo, direccion, distrito, provincia, departamento, ocupacion, tipo_sangre, estado_registro)
 -- VALUES ('PAC-000001', 'DNI', '12345678', 'Juan Carlos', 'Perez', 'Gomez', '1990-05-15', 'MASCULINO', 'SOLTERO', '987654321', 'juan.perez@example.com', 'Av. Las Flores 123', 'Trujillo', 'Trujillo', 'La Libertad', 'Ingeniero', 'O+', 'ACTIVO');
+
+-- ============================================
+-- EVALUACION 02 - Seguridad y Auditoria
+-- Nota: JPA (ddl-auto=update) crea estas tablas automaticamente
+-- al arrancar la app; este script sirve como evidencia/referencia.
+-- ============================================
+
+-- ------------------------------
+-- Tabla: rol (Pregunta 3 - roles del sistema)
+-- ------------------------------
+CREATE TABLE IF NOT EXISTS rol (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(30) NOT NULL UNIQUE, -- ADMINISTRADOR, MEDICO, RECEPCIONISTA
+    descripcion VARCHAR(200),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------
+-- Tabla: usuario (relacion @ManyToOne con rol)
+-- ------------------------------
+CREATE TABLE IF NOT EXISTS usuario (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL, -- hash BCrypt, nunca texto plano
+    nombre_completo VARCHAR(150) NOT NULL,
+    correo VARCHAR(150),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    rol_id BIGINT NOT NULL,
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ultimo_acceso DATETIME,
+    FOREIGN KEY (rol_id) REFERENCES rol(id),
+    INDEX idx_usuario_rol (rol_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------
+-- Tabla: auditoria (Pregunta 2 - bitacora de operaciones)
+-- Registrada automaticamente por el aspecto AOP (@Auditable)
+-- ------------------------------
+CREATE TABLE IF NOT EXISTS auditoria (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(50) NOT NULL,       -- usuario autenticado que realizo la operacion
+    fecha_hora DATETIME NOT NULL,       -- fecha y hora exacta
+    operacion VARCHAR(20) NOT NULL,     -- REGISTRO, MODIFICACION, ELIMINACION, CONSULTA
+    entidad VARCHAR(50) NOT NULL,       -- Paciente, Usuario, Rol, ...
+    entidad_id VARCHAR(50),             -- identificador del registro afectado
+    detalle VARCHAR(500),
+    INDEX idx_auditoria_entidad (entidad, entidad_id),
+    INDEX idx_auditoria_fecha (fecha_hora),
+    INDEX idx_auditoria_usuario (usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------
+-- Datos iniciales de seguridad
+-- (los crea automaticamente DatosSeguridadSeeder con BCrypt;
+--  estos INSERTs son referencia para carga manual)
+-- ------------------------------
+-- INSERT INTO rol (nombre, descripcion) VALUES
+--   ('ADMINISTRADOR', 'Acceso total: usuarios, roles, auditoria y modulos'),
+--   ('MEDICO', 'Pacientes e historias clinicas'),
+--   ('RECEPCIONISTA', 'Pacientes y citas');
+-- Usuarios demo: admin/admin123, medico/medico123, recepcionista/recep123

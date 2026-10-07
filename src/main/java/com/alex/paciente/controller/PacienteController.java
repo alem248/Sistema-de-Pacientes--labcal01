@@ -5,6 +5,7 @@ import com.alex.paciente.entity.ContactoEmergencia;
 import com.alex.paciente.entity.Paciente;
 import com.alex.paciente.entity.SeguroPaciente;
 import com.alex.paciente.entity.enums.*;
+import com.alex.paciente.repository.HistoriaClinicaRepository;
 import com.alex.paciente.service.PacienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class PacienteController {
 
     private final PacienteService pacienteService;
+    private final HistoriaClinicaRepository historiaClinicaRepository;
 
     @Value("${paciente.upload-dir:uploads}")
     private String uploadDir;
@@ -118,7 +120,7 @@ public class PacienteController {
         }
     }
 
-    // ============ Detalle (consulta rápida + foto + relaciones) ============
+    // ============ RF-PAC-06: Detalle (información completa del paciente) ============
     @GetMapping("/{id}")
     public String detalle(@PathVariable Long id, Model model, RedirectAttributes redirect) {
         return pacienteService.buscarPorId(id)
@@ -127,6 +129,9 @@ public class PacienteController {
                     model.addAttribute("contactos", pacienteService.listarContactos(id));
                     model.addAttribute("seguros", pacienteService.listarSeguros(id));
                     model.addAttribute("antecedentes", pacienteService.listarAntecedentes(id));
+                    // RF-PAC-06: historia clínica y alergias completan la ficha
+                    model.addAttribute("historia", historiaClinicaRepository.findByPacienteId(id).orElse(null));
+                    model.addAttribute("alergias", paciente.getPacienteAlergias());
                     model.addAttribute("nuevoContacto", new ContactoEmergencia());
                     model.addAttribute("nuevoSeguro", new SeguroPaciente());
                     model.addAttribute("nuevoAntecedente", new Antecedente());
