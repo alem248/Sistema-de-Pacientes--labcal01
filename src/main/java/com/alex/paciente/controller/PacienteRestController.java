@@ -50,33 +50,6 @@ public class PacienteRestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dtoRespuesta);
     }
 
-    @GetMapping
-    public ResponseEntity<List<PacienteResponseDTO>> listar() {
-        return ResponseEntity.ok(pacienteService.listarTodos());
-    }
-
-    @GetMapping("/paginado")
-    public ResponseEntity<Page<PacienteResponseDTO>> listarPaginado(@PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(pacienteService.listarPaginado(pageable));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<PacienteResponseDTO> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(pacienteService.obtenerPorId(id));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<PacienteResponseDTO> actualizar(@PathVariable Long id,
-                                                          @Valid @RequestBody PacienteCreateDTO dto) {
-        return ResponseEntity.ok(pacienteService.actualizar(id, dto));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        pacienteService.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
-
     // ---------- Req.6: búsquedas específicas ----------
     @GetMapping("/dni/{dni}")
     public ResponseEntity<PacienteResponseDTO> porDni(@PathVariable String dni) {
@@ -133,4 +106,11 @@ public class PacienteRestController {
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(pacienteService.busquedaGeneral(q, pageable));
     }
-}
+
+    // ---------- Nueva funcionalidad: Verificar disponibilidad de código ----------
+    @GetMapping("/api/verificar-codigo/{codigo}")
+    @ResponseBody
+    public String verificarCodigoDisponible(@PathVariable String codigo) {
+        boolean existe = pacienteService.existeCodigoUnico(codigo);
+        return existe ? "EXISTE" : "DISPONIBLE";
+    }
