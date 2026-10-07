@@ -1,5 +1,6 @@
 package com.alex.paciente.service;
 
+import com.alex.paciente.audit.Auditable;
 import com.alex.paciente.dto.*;
 import com.alex.paciente.entity.HistoriaClinica;
 import com.alex.paciente.entity.Paciente;
@@ -31,6 +32,7 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
     private final PacienteService pacienteService;
 
     @Override
+    @Auditable(operacion = "REGISTRO", entidad = "Paciente")
     public PacienteResponseDTO crear(PacienteRequestDTO dto) {
         if (pacienteRepository.existsByDni(dto.dni()))
             throw new DuplicateResourceException("Ya existe un paciente con DNI " + dto.dni());
@@ -62,7 +64,70 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
         return toDTO(getEntity(id));
     }
 
+    /**
+     * RF-PAC-06: ficha completa del paciente.
+     * Carga perezosa resuelta dentro de la transacción de solo lectura.
+     */
     @Override
+    @Transactional(readOnly = true)
+    public PacienteDetalleResponseDTO obtenerDetalleCompleto(Long id) {
+        Paciente p = getEntity(id);
+
+        HistoriaClinica h = p.getHistoriaClinica();
+        if (h == null) {
+            h = historiaRepository.findByPacienteId(id).orElse(null);
+        }
+
+        List<PacienteDetalleResponseDTO.ContactoDTO> contactos = p.getContactos().stream()
+                .map(c -> new PacienteDetalleResponseDTO.ContactoDTO(
+                        c.getId(), c.getNombreCompleto(), c.getParentesco(), c.getTelefono(),
+                        c.getDireccion(), c.getCorreo(), c.getEsPrincipal()))
+                .toList();
+
+        List<PacienteDetalleResponseDTO.SeguroDTO> seguros = p.getSeguros().stream()
+                .map(s -> new PacienteDetalleResponseDTO.SeguroDTO(
+                        s.getId(), s.getTipoSeguro() == null ? null : s.getTipoSeguro().name(),
+                        s.getEmpresaAseguradora(), s.getNumeroPoliza(), s.getNumeroAfiliacion(),
+                        s.getFechaInicio(), s.getFechaVencimiento(),
+                        s.getEstadoCobertura() == null ? null : s.getEstadoCobertura().name()))
+                .toList();
+
+        List<PacienteDetalleResponseDTO.AntecedenteDTO> antecedentes = p.getAntecedentes().stream()
+                .map(a -> new PacienteDetalleResponseDTO.AntecedenteDTO(
+                        a.getId(), a.getCategoria() == null ? null : a.getCategoria().name(),
+                        a.getTipo(), a.getDescripcion(), a.getReaccion(), a.getFechaRegistro()))
+                .toList();
+
+        List<PacienteDetalleResponseDTO.AlergiaDTO> alergias = p.getPacienteAlergias().stream()
+                .map(pa -> new PacienteDetalleResponseDTO.AlergiaDTO(
+                        pa.getId(), pa.getAlergia().getNombre(),
+                        pa.getAlergia().getTipo() == null ? null : pa.getAlergia().getTipo().name(),
+                        pa.getReaccion(),
+                        pa.getSeveridad() == null ? null : pa.getSeveridad().name(),
+                        pa.getFechaRegistro()))
+                .toList();
+
+        return new PacienteDetalleResponseDTO(
+                p.getId(), p.getCodigoPaciente(),
+                p.getTipoDocumento() == null ? null : p.getTipoDocumento().name(),
+                p.getNumeroDocumento(), p.getNombres(), p.getApellidoPaterno(), p.getApellidoMaterno(),
+                p.getNombreCompleto(), p.getFechaNacimiento(), p.getEdad(),
+                p.getSexo() == null ? null : p.getSexo().name(),
+                p.getEstadoCivil() == null ? null : p.getEstadoCivil().name(),
+                p.getTipoSangre() == null ? null : p.getTipoSangre().name(),
+                p.getOcupacion(),
+                p.getEstadoRegistro() == null ? null : p.getEstadoRegistro().name(),
+                p.getTelefono(), p.getCorreo(), p.getDireccion(), p.getDistrito(),
+                p.getProvincia(), p.getDepartamento(), p.getFotoUrl(),
+                p.getFechaRegistro(), p.getFechaActualizacion(),
+                h == null ? null : h.getNumeroHistoria(),
+                h == null ? null : h.getFechaApertura(),
+                h == null ? null : h.getObservaciones(),
+                contactos, seguros, antecedentes, alergias);
+    }
+
+    @Override
+    @Auditable(operacion = "MODIFICACION", entidad = "Paciente")
     public PacienteResponseDTO actualizar(Long id, PacienteRequestDTO dto) {
         Paciente p = getEntity(id);
         if (!p.getDni().equals(dto.dni()) && pacienteRepository.existsByDni(dto.dni()))
@@ -87,6 +152,7 @@ public class PacienteConsultaServiceImpl implements PacienteConsultaService {
     }
 
     @Override
+    @Auditable(operacion = "ELIMINACION", entidad = "Paciente", idArgIndex = 0)
     public void eliminar(Long id) {
         Paciente p = getEntity(id);
         pacienteRepository.delete(p);
