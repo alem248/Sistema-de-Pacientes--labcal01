@@ -1,5 +1,6 @@
 package com.alex.paciente.service;
 
+import com.alex.paciente.dto.PacienteDetalleResponseDTO;
 import com.alex.paciente.dto.PacienteRequestDTO;
 import com.alex.paciente.dto.PacienteResponseDTO;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,10 @@ public interface PacienteConsultaService {
     List<PacienteResponseDTO> listarTodos();
     Page<PacienteResponseDTO> listarPaginado(Pageable pageable);
     PacienteResponseDTO obtenerPorId(Long id);
+
+    /** RF-PAC-06: ficha completa del paciente (datos + relaciones + historia clínica). */
+    PacienteDetalleResponseDTO obtenerDetalleCompleto(Long id);
+
     PacienteResponseDTO actualizar(Long id, PacienteRequestDTO dto);
     void eliminar(Long id);
 
