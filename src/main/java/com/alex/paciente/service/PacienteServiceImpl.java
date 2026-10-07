@@ -1,14 +1,12 @@
 package com.alex.paciente.service;
 
+import com.alex.paciente.dto.PacienteCreateDTO;
 import com.alex.paciente.entity.Antecedente;
 import com.alex.paciente.entity.ContactoEmergencia;
 import com.alex.paciente.entity.Paciente;
 import com.alex.paciente.entity.SeguroPaciente;
 import com.alex.paciente.entity.enums.EstadoRegistro;
-import com.alex.paciente.repository.AntecedenteRepository;
-import com.alex.paciente.repository.ContactoEmergenciaRepository;
 import com.alex.paciente.repository.PacienteRepository;
-import com.alex.paciente.repository.SeguroPacienteRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -51,22 +49,22 @@ public class PacienteServiceImpl implements PacienteService {
         return String.format("PAC-%06d", siguiente);
     }
 
-    // ================= RF-PAC-04: Registro con validaciones =================
+    // ================= RF-PAC-04: Registro con DTO =================
     @Override
-    public Paciente registrarPaciente(Paciente paciente) {
+    public Paciente registrarPacienteDesdeDTO(PacienteCreateDTO dto) {
+        // Convertir DTO a entidad (genera código único automáticamente)
+        Paciente paciente = dto.toEntity(pacienteRepository);
+
         // Verificar que el documento no esté registrado previamente (identificación)
         if (paciente.getNumeroDocumento() != null && existeDocumento(paciente.getNumeroDocumento())) {
             throw new IllegalArgumentException("El documento " + paciente.getNumeroDocumento() + " ya está registrado. Se evita duplicado.");
         }
-        // Generar código automático si no viene
-        if (paciente.getCodigoPaciente() == null || paciente.getCodigoPaciente().isBlank()) {
-            paciente.setCodigoPaciente(generarCodigoPaciente());
-        } else {
-            // Verificar código no duplicado
-            if (pacienteRepository.existsByCodigoPaciente(paciente.getCodigoPaciente())) {
-                throw new IllegalArgumentException("El código de paciente " + paciente.getCodigoPaciente() + " ya existe.");
-            }
+
+        // Validar que el código único no sea duplicado (debería ser único por generación, pero doble validación)
+        if (pacienteRepository.existsByCodigoPaciente(paciente.getCodigoPaciente())) {
+            throw new IllegalArgumentException("El código de paciente " + paciente.getCodigoPaciente() + " ya existe.");
         }
+
         // Asegurar relaciones bidireccionales si vienen en el builder
         if (paciente.getContactos() != null) {
             paciente.getContactos().forEach(c -> c.setPaciente(paciente));
@@ -79,6 +77,8 @@ public class PacienteServiceImpl implements PacienteService {
         }
         return pacienteRepository.save(paciente);
     }
+
+    // ... rest of the methods remain the same
 
     @Override
     public Paciente actualizarPaciente(Long id, Paciente datos) {
