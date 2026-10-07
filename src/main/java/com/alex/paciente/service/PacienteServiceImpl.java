@@ -1,5 +1,6 @@
 package com.alex.paciente.service;
 
+import com.alex.paciente.audit.Auditable;
 import com.alex.paciente.entity.Antecedente;
 import com.alex.paciente.entity.ContactoEmergencia;
 import com.alex.paciente.entity.Paciente;
@@ -53,6 +54,7 @@ public class PacienteServiceImpl implements PacienteService {
 
     // ================= RF-PAC-04: Registro con validaciones =================
     @Override
+    @Auditable(operacion = "REGISTRO", entidad = "Paciente")
     public Paciente registrarPaciente(Paciente paciente) {
         // Verificar que el documento no esté registrado previamente (identificación)
         if (paciente.getNumeroDocumento() != null && existeDocumento(paciente.getNumeroDocumento())) {
@@ -81,6 +83,7 @@ public class PacienteServiceImpl implements PacienteService {
     }
 
     @Override
+    @Auditable(operacion = "MODIFICACION", entidad = "Paciente")
     public Paciente actualizarPaciente(Long id, Paciente datos) {
         Paciente existente = pacienteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Paciente no encontrado con id " + id));
@@ -179,6 +182,7 @@ public class PacienteServiceImpl implements PacienteService {
     }
 
     @Override
+    @Auditable(operacion = "MODIFICACION", entidad = "Paciente", idArgIndex = 0)
     public void cambiarEstado(Long id, EstadoRegistro nuevoEstado) {
         Paciente p = pacienteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Paciente no encontrado"));
@@ -188,6 +192,7 @@ public class PacienteServiceImpl implements PacienteService {
     }
 
     @Override
+    @Auditable(operacion = "ELIMINACION", entidad = "Paciente", idArgIndex = 0)
     public void eliminarLogico(Long id) {
         cambiarEstado(id, EstadoRegistro.INACTIVO);
     }
