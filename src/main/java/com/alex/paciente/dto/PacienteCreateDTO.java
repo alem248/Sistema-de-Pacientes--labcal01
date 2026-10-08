@@ -1,6 +1,8 @@
 package com.alex.paciente.dto;
 
-import jakarta.validation.*;
+import com.alex.paciente.entity.Paciente;
+import com.alex.paciente.repository.PacienteRepository;
+import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
@@ -72,17 +74,38 @@ public record PacienteCreateDTO(
 
         return Paciente.builder()
                 .codigoPaciente(codigoUnico)
-                .tipoDocumento(tipoDocumento)
+                .tipoDocumento(convertirTipoDocumento(tipoDocumento))
                 .numeroDocumento(numeroDocumento)
                 .nombres(nombres)
                 .apellidoPaterno(apellidoPaterno)
                 .apellidoMaterno(apellidoMaterno)
                 .fechaNacimiento(fechaNacimiento)
-                .sexo(sexo)
-                .email(email)
+                .sexo(convertirSexo(sexo))
+                .correo(email)
                 .telefono(telefono)
                 .direccion(direccion)
                 .build();
+    }
+
+    private static com.alex.paciente.entity.enums.TipoDocumento convertirTipoDocumento(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return com.alex.paciente.entity.enums.TipoDocumento.DNI;
+        }
+        try {
+            return com.alex.paciente.entity.enums.TipoDocumento.valueOf(valor.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return com.alex.paciente.entity.enums.TipoDocumento.OTRO;
+        }
+    }
+
+    private static com.alex.paciente.entity.enums.Sexo convertirSexo(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return com.alex.paciente.entity.enums.Sexo.OTRO;
+        }
+        String v = valor.trim().toUpperCase();
+        if (v.startsWith("M")) return com.alex.paciente.entity.enums.Sexo.MASCULINO;
+        if (v.startsWith("F")) return com.alex.paciente.entity.enums.Sexo.FEMENINO;
+        return com.alex.paciente.entity.enums.Sexo.OTRO;
     }
 
     /**

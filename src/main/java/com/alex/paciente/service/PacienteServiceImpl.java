@@ -54,6 +54,17 @@ public class PacienteServiceImpl implements PacienteService {
 
     // ================= RF-PAC-04: Registro con validaciones =================
     @Override
+    public boolean existeCodigoUnico(String codigoPaciente) {
+        return codigoPaciente != null && pacienteRepository.existsByCodigoPaciente(codigoPaciente);
+    }
+
+    @Override
+    @Auditable(operacion = "REGISTRO", entidad = "Paciente")
+    public Paciente registrarPacienteDesdeDTO(com.alex.paciente.dto.PacienteCreateDTO dto) {
+        return registrarPaciente(dto.toEntity(pacienteRepository));
+    }
+
+    @Override
     @Auditable(operacion = "REGISTRO", entidad = "Paciente")
     public Paciente registrarPaciente(Paciente paciente) {
         // Verificar que el documento no esté registrado previamente (identificación)

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${esEdicion} ? 'Editar Usuario' : 'Nuevo Usuario'">Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/pacientes"><i class="bi bi-hospital"></i> Sistema de Pacientes</a>
+        <a href="/usuarios" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h4 class="mb-0">
+                <i th:class="${esEdicion} ? 'bi bi-pencil-square' : 'bi bi-person-plus'"></i>
+                <span th:text="${esEdicion} ? 'Editar Usuario' : 'Registro de Usuario'"></span>
+            </h4>
+            <small class="text-muted">Asigne un rol para definir los permisos. La clave se guarda con hash BCrypt.</small>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post" novalidate>
+                <input type="hidden" th:field="*{id}">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Usuario *</label>
+                        <input type="text" class="form-control" th:field="*{username}" placeholder="ej: juanperez" maxlength="50">
+                        <small class="text-muted">Entre 4 y 50 caracteres, &uacute;nico</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nombre completo *</label>
+                        <input type="text" class="form-control" th:field="*{nombreCompleto}" placeholder="Nombres y apellidos" maxlength="150">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Correo</label>
+                        <input type="email" class="form-control" th:field="*{correo}" placeholder="correo@ejemplo.com" maxlength="150">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Clave <span th:unless="${esEdicion}">*</span></label>
+                        <input type="password" class="form-control" name="password" placeholder="M&iacute;nimo 6 caracteres" autocomplete="new-password">
+                        <small class="text-muted" th:if="${esEdicion}">Dejar vac&iacute;o para conservar la actual</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Rol *</label>
+                        <select class="form-select" name="rolId">
+                            <option value="">-- Seleccione rol --</option>
+                            <option th:each="r : ${roles}" th:value="${r.id}"
+                                    th:selected="${usuario.rol != null and usuario.rol.id == r.id}"
+                                    th:disabled="${!r.activo}"
+                                    th:text="${r.nombre} + (${!r.activo} ? ' (inactivo)' : '')">ROL</option>
+                        </select>
+                        <div class="form-text">ADMINISTRADOR, MEDICO o RECEPCIONISTA</div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="activo" name="activo" value="true"
+                                   th:checked="${usuario.activo != null and usuario.activo}">
+                            <label class="form-check-label" for="activo">Usuario activo (puede iniciar sesi&oacute;n)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Guardar</button>
+                    <a href="/usuarios" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="text-center text-muted mt-4 mb-4">
+        <small>CRUD Usuarios | Evaluaci&oacute;n 02 - Nikolai Suarez</small>
+    </footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
