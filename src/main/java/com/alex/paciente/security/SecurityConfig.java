@@ -114,6 +114,10 @@ public class SecurityConfig {
                 }, PathPatternRequestMatcher.withDefaults().matcher("/api/**"))
                 // MVC: página de acceso denegado
                 .accessDeniedPage("/acceso-denegado")
+                // Modulo web: los accesos sin sesion se redirigen al formulario de login
+                .defaultAuthenticationEntryPointFor(
+                        new org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint("/login"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/**"))
             );
         return http.build();
     }
