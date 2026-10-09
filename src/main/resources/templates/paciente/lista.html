@@ -13,6 +13,7 @@
         <a class="navbar-brand" href="/pacientes"><i class="bi bi-hospital"></i> Sistema de Pacientes - LabCal01</a>
         <div class="ms-auto d-flex align-items-center gap-2">
             <a th:if="${esAdministrador}" href="/auditoria" class="btn btn-outline-light"><i class="bi bi-journal-text"></i> Auditoría</a>
+            <a th:if="${esAdministrador or esRecepcionista}" href="/citas" class="btn btn-outline-light"><i class="bi bi-calendar-check"></i> Citas</a>
             <!-- RF-PAC-03/04: registrar paciente -> solo ADMINISTRADOR y RECEPCIONISTA -->
             <a th:if="${esAdministrador or esRecepcionista}" href="/pacientes/nuevo" class="btn btn-light"><i class="bi bi-person-plus"></i> Nuevo Paciente</a>
             <span class="text-white small" th:if="${autenticado}">

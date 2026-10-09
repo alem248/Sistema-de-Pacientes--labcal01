@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers("/auditoria/**", "/api/v1/auditoria/**").hasRole("ADMINISTRADOR")
                 // Usuarios y roles (CRUD + activar/desactivar): solo ADMINISTRADOR
                 .requestMatchers("/usuarios/**", "/roles/**").hasRole("ADMINISTRADOR")
+                // Citas: ADMINISTRADOR y RECEPCIONISTA
+                .requestMatchers("/citas/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
                 // API REST de pacientes (RF-PAC-05/06)
                 .requestMatchers(HttpMethod.GET, "/api/v1/pacientes/**")
                     .hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
