@@ -20,6 +20,10 @@ public class SeguridadModelAdvice {
         boolean autenticado = auth != null && auth.isAuthenticated()
                 && !"anonymousUser".equals(String.valueOf(auth.getPrincipal()));
         model.addAttribute("autenticado", autenticado);
+        // Valores por defecto: evita "null to boolean" en expresiones de las vistas
+        model.addAttribute("esAdministrador", false);
+        model.addAttribute("esMedico", false);
+        model.addAttribute("esRecepcionista", false);
         if (autenticado) {
             model.addAttribute("usuarioActual", auth.getName());
             for (GrantedAuthority ga : auth.getAuthorities()) {
