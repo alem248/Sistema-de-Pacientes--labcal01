@@ -22,7 +22,8 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
  * |----------------------------------|---------------|--------|---------------|
  * | Buscar pacientes (RF-PAC-05)     |       X       |   X    |       X       |
  * | Ver ficha completa (RF-PAC-06)   |       X       |   X    |       X       |
- * | Registrar / editar paciente      |       X       |        |       X       |
+ * | Registrar paciente (POST)        |       X       |   X    |       X       |
+ * | Editar paciente (PUT)            |       X       |        |       X       |
  * | Contactos y seguros              |       X       |        |       X       |
  * | Antecedentes / historia clínica  |       X       |   X    |               |
  * | Eliminar (API REST)              |       X       |        |               |
@@ -66,7 +67,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/pacientes/**")
                     .hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                 .requestMatchers(HttpMethod.POST, "/api/v1/pacientes/**")
-                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
+                    .hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/pacientes/**")
                     .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/pacientes/**")

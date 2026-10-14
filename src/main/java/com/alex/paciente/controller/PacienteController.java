@@ -10,6 +10,7 @@ import com.alex.paciente.service.PacienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -38,6 +39,7 @@ public class PacienteController {
 
     // ============ Listado + Búsqueda ============
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     public String listar(@RequestParam(value = "q", required = false) String q,
                          @RequestParam(value = "codigo", required = false) String codigo,
                          @RequestParam(value = "documento", required = false) String documento,
@@ -74,6 +76,7 @@ public class PacienteController {
 
     // ============ Formulario Nuevo ============
     @GetMapping("/nuevo")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     public String nuevoForm(Model model) {
         model.addAttribute("paciente", new Paciente());
         cargarEnums(model);
@@ -83,6 +86,7 @@ public class PacienteController {
 
     // ============ Guardar (RF-PAC-03 + RF-PAC-04) ============
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     public String guardar(@Valid @ModelAttribute("paciente") Paciente paciente,
                           BindingResult result,
                           @RequestParam(value = "foto", required = false) MultipartFile foto,
@@ -122,6 +126,7 @@ public class PacienteController {
 
     // ============ RF-PAC-06: Detalle (información completa del paciente) ============
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     public String detalle(@PathVariable Long id, Model model, RedirectAttributes redirect) {
         return pacienteService.buscarPorId(id)
                 .map(paciente -> {
@@ -146,6 +151,7 @@ public class PacienteController {
 
     // ============ Edición ============
     @GetMapping("/{id}/editar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String editarForm(@PathVariable Long id, Model model, RedirectAttributes redirect) {
         return pacienteService.buscarPorId(id)
                 .map(paciente -> {
@@ -161,6 +167,7 @@ public class PacienteController {
     }
 
     @PostMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String actualizar(@PathVariable Long id,
                              @Valid @ModelAttribute("paciente") Paciente paciente,
                              BindingResult result,
@@ -203,6 +210,7 @@ public class PacienteController {
 
     // ============ Cambio de Estado (Activo / Inactivo / Fallecido) ============
     @PostMapping("/{id}/estado")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String cambiarEstado(@PathVariable Long id,
                                 @RequestParam("estado") EstadoRegistro estado,
                                 RedirectAttributes redirect) {
@@ -217,6 +225,7 @@ public class PacienteController {
 
     // ============ Contacto Emergencia ============
     @PostMapping("/{id}/contactos")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String agregarContacto(@PathVariable Long id,
                                   @Valid @ModelAttribute("nuevoContacto") ContactoEmergencia contacto,
                                   BindingResult result,
@@ -236,6 +245,7 @@ public class PacienteController {
     }
 
     @PostMapping("/{pacienteId}/contactos/{contactoId}/eliminar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String eliminarContacto(@PathVariable Long pacienteId,
                                    @PathVariable Long contactoId,
                                    RedirectAttributes redirect) {
@@ -250,6 +260,7 @@ public class PacienteController {
 
     // ============ Seguro ============
     @PostMapping("/{id}/seguros")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String agregarSeguro(@PathVariable Long id,
                                 @Valid @ModelAttribute("nuevoSeguro") SeguroPaciente seguro,
                                 BindingResult result,
@@ -268,6 +279,7 @@ public class PacienteController {
     }
 
     @PostMapping("/{pacienteId}/seguros/{seguroId}/eliminar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
     public String eliminarSeguro(@PathVariable Long pacienteId,
                                  @PathVariable Long seguroId,
                                  RedirectAttributes redirect) {
@@ -282,6 +294,7 @@ public class PacienteController {
 
     // ============ Antecedentes ============
     @PostMapping("/{id}/antecedentes")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO')")
     public String agregarAntecedente(@PathVariable Long id,
                                      @Valid @ModelAttribute("nuevoAntecedente") Antecedente antecedente,
                                      BindingResult result,
@@ -300,6 +313,7 @@ public class PacienteController {
     }
 
     @PostMapping("/{pacienteId}/antecedentes/{antecedenteId}/eliminar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO')")
     public String eliminarAntecedente(@PathVariable Long pacienteId,
                                       @PathVariable Long antecedenteId,
                                       RedirectAttributes redirect) {
@@ -314,6 +328,7 @@ public class PacienteController {
 
     // ============ AJAX: verificar documento (evitar duplicados) ============
     @GetMapping("/api/verificar-documento")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     @ResponseBody
     public String verificarDocumento(@RequestParam String numeroDocumento) {
         boolean existe = pacienteService.existeDocumento(numeroDocumento);

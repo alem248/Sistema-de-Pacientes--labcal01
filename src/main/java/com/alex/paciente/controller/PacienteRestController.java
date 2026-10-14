@@ -34,7 +34,7 @@ public class PacienteRestController {
     private final PacienteConsultaService pacienteService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','RECEPCIONISTA')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','MEDICO','RECEPCIONISTA')")
     public ResponseEntity<PacienteResponseDTO> crear(@Valid @RequestBody PacienteRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pacienteService.crear(dto));
     }

@@ -12,6 +12,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -75,6 +76,45 @@ class PacienteRestControllerSecurityTest {
         mockMvc.perform(get("/api/v1/pacientes/dni/12345678"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombres").value("Juan"));
+    }
+
+    // ---------- 201: el médico también registra pacientes ----------
+    @Test
+    @WithMockUser(username = "medico", roles = {"MEDICO"})
+    @DisplayName("RF-PAC-01: MEDICO puede registrar pacientes -> 201")
+    void medicoPuedeRegistrarPaciente() throws Exception {
+        when(pacienteService.crear(any())).thenReturn(pacienteDto());
+
+        mockMvc.perform(post("/api/v1/pacientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dni": "12345678",
+                                  "nombres": "Juan",
+                                  "apellidoPaterno": "Perez",
+                                  "apellidoMaterno": "Garcia"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.codigo").value("PAC-000001"));
+    }
+
+    @Test
+    @WithMockUser(username = "medico", roles = {"MEDICO"})
+    @DisplayName("RF-PAC-01: MEDICO no puede editar pacientes (PUT) -> 403")
+    void medicoNoPuedeEditarPaciente() throws Exception {
+        mockMvc.perform(put("/api/v1/pacientes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dni": "12345678",
+                                  "nombres": "Juan",
+                                  "apellidoPaterno": "Perez",
+                                  "apellidoMaterno": "Garcia"
+                                }
+                                """))
+                .andExpect(status().isForbidden());
     }
 
     // ---------- 403: rol sin permiso ----------
